@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>THE SUN — WAY PAST THE MOON</title>
+<style>
+  :root{
+    --gold: #ffcf33;
+    --amber: #ff9a00;
+    --orange: #ff6700;
+    --sun-core: #ffd76a;
+    --bg: #05050a;
+    --text: #fffbed;
+    --glow-strong: 0 0 24px rgba(255, 195, 0, 0.9), 0 0 60px rgba(255, 110, 0, 0.6);
+    --glow-soft: 0 0 18px rgba(255, 195, 0, 0.5), 0 0 40px rgba(255, 110, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body{
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+  }
+
+  /* STARFIELD (canvas) */
+  #stars{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(1200px 800px at 50% 60%, rgba(255,160,0,0.06), transparent 70%) ,
+                radial-gradient(900px 600px at 40% 30%, rgba(255,80,0,0.04), transparent 70%),
+                #000;
+  }
+
+  /* LEFT LINKS */
+  .links{
+    position: fixed;
+    left: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 22vw;
+    min-width: 240px;
+    max-width: 340px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .links h2{
+    margin: 0 0 .3rem 0;
+    font-size: 1.2rem;
+    letter-spacing: .06em;
+    opacity: .9;
+  }
+
+  .link{
+    display: block;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    text-decoration: none;
+    color: #fffbea;
+    line-height: 1.3em;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+    backdrop-filter: blur(3px);
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: inset 0 2px 6px rgba(255,255,255,0.15), 0 0 20px rgba(255,195,0,0.4);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.4), 0 0 10px rgba(255,200,0,0.5);
+    transition: transform 0.25s, box-shadow 0.25s;
+  }
+
+  .link:hover{
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: inset 0 2px 6px rgba(255,255,255,0.2), 0 0 40px rgba(255,200,0,0.8);
+  }
+
+  /* RIGHT CHART BOX */
+  .chart{
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: min(420px, 90vw);
+    height: min(640px, 70vh);
+    z-index: 3;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 50px rgba(0,0,0,.6), var(--glow-soft);
+    border: 1px solid rgba(255,255,255,.15);
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    backdrop-filter: blur(4px);
+  }
+
+  .chart iframe{
+    width: 100%; height: 100%; border: 0;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 20px),
+      radial-gradient(circle at 40% 30%, rgba(255,160,0,.18), transparent 60%),
+      rgba(5,5,10,.7);
+    color: #eee;
+  }
+
+  /* CENTER SUN */
+  .stage{
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .sun-wrap{
+    position: relative;
+    width: min(46vmin, 540px);
+    aspect-ratio: 1 / 1;
+    pointer-events: none;
+  }
+
+  .sun{
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    filter: drop-shadow(0 0 45px rgba(255,170,0,.7)) drop-shadow(0 0 120px rgba(255,120,0,.35));
+    background: radial-gradient(circle at 50% 50%, #fff2a6 0%, #ffd76a 28%, #ff9a00 58%, #ff6a00 72%, #ef4800 86%, #a31c00 100%);
+    mask: radial-gradient(circle at 50% 50%, black 66%, rgba(0,0,0,.85) 76%, transparent 100%);
+    overflow: hidden;
+  }
+
+  .surface{
+    position: absolute; inset: -3%;
+    filter: url(#sunFire);
+    mix-blend-mode: overlay;
+    opacity: .9;
+    background: radial-gradient(circle at 50% 55%, rgba(255,210,50,.7) 0%, rgba(255,150,0,.55) 42%, rgba(255,90,0,.35) 66%, rgba(120,20,0,.25) 100%);
+    animation: drift 18s linear infinite;
+  }
+
+  @keyframes drift {
+    from { transform: rotate(0deg) scale(1); }
+    50%  { transform: rotate(180deg) scale(1.03); }
+    to   { transform: rotate(360deg) scale(1); }
+  }
+
+  .corona{
+    position: absolute; inset: -14%;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+      conic-gradient(from 0deg,
+        rgba(255,198,77,.25) 0 6deg,
+        rgba(255,128,0,.0) 6deg 16deg,
+        rgba(255,198,77,.22) 16deg 22deg,
+        rgba(255,128,0,.0) 22deg 36deg,
+        rgba(255,198,77,.2) 36deg 40deg,
+        rgba(255,128,0,.0) 40deg 60deg,
+        rgba(255,198,77,.23) 60deg 68deg,
+        rgba(255,128,0,.0) 68deg 88deg,
+        rgba(255,198,77,.25) 88deg 96deg,
+        rgba(255,128,0,.0) 96deg 120deg,
+        rgba(255,198,77,.22) 120deg 128deg,
+        rgba(255,128,0,.0) 128deg 150deg,
+        rgba(255,198,77,.2) 150deg 160deg,
+        rgba(255,128,0,.0) 160deg 180deg,
+        rgba(255,198,77,.25) 180deg 186deg,
+        rgba(255,128,0,.0) 186deg 206deg,
+        rgba(255,198,77,.2) 206deg 222deg,
+        rgba(255,128,0,.0) 222deg 240deg,
+        rgba(255,198,77,.22) 240deg 252deg,
+        rgba(255,128,0,.0) 252deg 270deg,
+        rgba(255,198,77,.25) 270deg 282deg,
+        rgba(255,128,0,.0) 282deg 300deg,
+        rgba(255,198,77,.2) 300deg 316deg,
+        rgba(255,128,0,.0) 316deg 336deg,
+        rgba(255,198,77,.25) 336deg 360deg);
+    filter: blur(10px) saturate(120%);
+    animation: coronaSpin 36s linear infinite;
+    mix-blend-mode: screen;
+  }
+
+  @keyframes coronaSpin {
+    from { transform: rotate(0deg) scale(1.03); }
+    to   { transform: rotate(360deg) scale(1.03); }
+  }
+
+  .flare{
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    filter: blur(8px) saturate(130%);
+    opacity: .6;
+    background:
+      radial-gradient(120px 60px at 70% 10%, rgba(255,200,80,.55), transparent 60%),
+      radial-gradient(130px 60px at 10% 85%, rgba(255,150,40,.45), transparent 65%),
+      radial-gradient(100px 50px at 85% 80%, rgba(255,210,120,.4), transparent 70%);
+    animation: flareMove 12s ease-in-out infinite;
+    mix-blend-mode: screen;
+  }
+
+  @keyframes flareMove {
+    0%   { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: .5; }
+    50%  { transform: translate(-50%, -50%) rotate(12deg) scale(1.12); opacity: .8; }
+    100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: .5; }
+  }
+
+  /* TITLE */
+  .title{
+    position: fixed;
+    top: 1.2rem; left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    font-weight: 900;
+    letter-spacing: .06em;
+    font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+    padding: .35rem .9rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+    border: 1px solid rgba(255,255,255,.25);
+    box-shadow: inset 0 2px 6px rgba(255,255,255,.2), var(--glow-soft);
+    text-shadow: 0 2px 0 rgba(0,0,0,.35), 0 0 18px rgba(255,190,0,.7);
+  }
+
+  /* GOALS BAR */
+  .goals{
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 3;
+    text-align: center;
+    padding: 14px 12px;
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
+    font-weight: 800;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border-top: 1px solid rgba(255,255,255,.22);
+    box-shadow: 0 -10px 40px rgba(0,0,0,.4), inset 0 6px 16px rgba(255,255,255,.07), 0 0 36px rgba(255,160,0,.35);
+  }
+
+  .goals .glow{
+    background: linear-gradient(90deg, var(--gold), var(--amber), var(--orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 18px rgba(255,195,0,.75), 0 0 38px rgba(255,120,0,.55);
+  }
+
+  @media (max-width: 760px){
+    .links{
+      position: fixed;
+      top: auto; bottom: 4.2rem; left: 50%;
+      transform: translateX(-50%);
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 96vw;
+      gap: .6rem;
+    }
+    .chart{
+      position: fixed;
+      right: 50%;
+      transform: translate(50%, calc(-50% + 10vmin));
+      width: 92vw; height: 46vh;
+    }
+    .sun-wrap{ width: min(68vmin, 520px); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<!-- LINKS -->
+<div class="links">
+  <h2>Follow THE SUN</h2>
+  <a class="link" href="https://x.com/tumordev" target="_blank">X — https://x.com/tumordev</a>
+  <a class="link" href="https://t.me/BRIGHTSUNCOIN" target="_blank">Telegram — https://t.me/BRIGHTSUNCOIN</a>
+</div>
+
+<!-- CHART -->
+<div class="chart">
+  <iframe srcdoc="<h1 style='font-family:sans-serif;text-align:center;margin-top:50%;color:#fff;'>Live Chart Coming Soon</h1>"></iframe>
+</div>
+
+<!-- TITLE -->
+<div class="title">THE SUN — WAY PAST THE MOON</div>
+
+<!-- SUN -->
+<div class="stage">
+  <div class="sun-wrap">
+    <div class="corona"></div>
+    <div class="sun">
+      <div class="surface"></div>
+      <div class="flare"></div>
+    </div>
+  </div>
+</div>
+
+<!-- GOALS -->
+<div class="goals">
+  🎯 Next Goal: <span class="glow">50K Market Cap</span>
+</div>
+
+<!-- FILTER -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="sunFire">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="3" seed="7" result="noise">
+      <animate attributeName="baseFrequency" dur="18s" values="0.007;0.010;0.008;0.006;0.008" repeatCount="indefinite" />
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G">
+      <animate attributeName="scale" dur="14s" values="12;20;16;18;12" repeatCount="indefinite"/>
+    </feDisplacementMap>
+  </filter>
+</svg>
+
+<script>
+(function(){
+  const c = document.getElementById('stars');
+  const ctx = c.getContext('2d');
+  let W, H, stars = [];
+  const COUNT = 300;
+
+  function resize(){
+    W = c.width = window.innerWidth;
+    H = c.height = window.innerHeight;
+    stars = Array.from({length: COUNT}, () => ({
+      x: Math.random()*W,
+      y: Math.random()*H,
+      r: Math.random()*1.6 + 0.2,
+      a: Math.random()*0.6 + 0.4,
+      t: Math.random()*Math.PI*2,
+      s: 0.5 + Math.random()*1.5
+    }));
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+
+  function tick(){
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    for(const s of stars){
+      s.t += 0.015 * s.s;
+      const alpha = s.a * (0.6 + 0.4*Math.sin(s.t));
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+    ctx.restore();
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
